@@ -2,7 +2,6 @@ use std::{io::BufReader, io::Read, string::FromUtf8Error};
 use crate::chunk_type::ChunkType;
 use core::fmt;
 
-
 pub const CRC32_LOOKUP_TABLE: [u32; 256] = {
     let mut table: [u32; 256] = [0;256];
 
@@ -40,7 +39,7 @@ pub enum ChunkError {
     LengthBytes
 }
 
-fn crc32(input_str: &[u8]) -> u32 {
+pub fn crc32(input_str: &[u8]) -> u32 {
     let mut crc: u32 = 0xFFFFFFFF;
 
     for &byte in input_str {
@@ -52,7 +51,6 @@ fn crc32(input_str: &[u8]) -> u32 {
 
 impl Chunk {
     fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
-
         let stream: Vec<u8> = chunk_type.bytes()
                 .into_iter()
                 .chain(data.clone())
