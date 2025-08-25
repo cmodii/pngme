@@ -10,10 +10,20 @@ pub struct ChunkType {
 
 #[derive(Debug)]
 pub enum ChunkTypeError {
-    InvalidByteRange,
+    InvalidByteRange(u8),
     InvalidString(String)
 }
 
+impl std::error::Error for ChunkTypeError {}
+
+impl fmt::Display for ChunkTypeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ChunkTypeError::InvalidByteRange(byte) => write!(f, "The byte {} is not within ASCII bounds", byte),
+            ChunkTypeError::InvalidString(feedback) => write!(f, "Cannot parse chunk type from str because of: {}", feedback)
+        }
+    }
+}
 
 impl ChunkType {
     pub fn bytes(&self) -> [u8; 4] {
@@ -53,7 +63,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
     fn try_from(bytes: [u8; 4]) -> Result<Self, Self::Error> {
         bytes.iter().try_for_each(|byte| {
             if !byte.is_ascii_alphabetic() {
-                Err(ChunkTypeError::InvalidByteRange)
+                Err(ChunkTypeError::InvalidByteRange(*byte))
             } else {
                 Ok(())
             }
