@@ -1,5 +1,5 @@
 use std::{io::BufReader, io::Read, string::FromUtf8Error};
-use crate::chunk_type::ChunkType;
+use crate::{chunk_type::ChunkType, png::PNGError};
 use core::fmt;
 
 pub const CRC32_LOOKUP_TABLE: [u32; 256] = {
@@ -35,8 +35,21 @@ pub struct Chunk {
 
 #[derive(Debug)]
 pub enum ChunkError {
-    DataLength,
-    LengthBytes
+    ReadErr(std::io::Error),
+    DataLength(usize),
+    CRCMismatch(u32, u32)
+}
+
+impl std::error::Error for ChunkError {}
+
+impl fmt::Display for ChunkError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ChunkError::ReadErr(err) => write!(f, "Byte reading failed. Returned: {}", err),
+            ChunkError::DataLength(size) => write!(f, "Data size insufficient to parse into a valid chunk ({} < 12)", size),
+            ChunkError::CRCMismatch(correct, incorrect) => write!(f, "Chunk contains {:#x} as CRC value when it should contain {:#x}", incorrect, correct)
+        }
+    }
 }
 
 pub fn crc32(input_str: &[u8]) -> u32 {
@@ -98,12 +111,12 @@ impl Chunk {
 }
 
 impl TryFrom<&[u8]> for Chunk {
-    type Error = crate::Error;
+    type Error = ChunkError;
 
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
         let length = data.len();
         if length < 12 {
-            return Err("Data length invalid for Chunk conversion".into());
+            return Err(ChunkError::DataLength(data.len()));
         }
 
         let mut reader = BufReader::new(data);
@@ -111,16 +124,16 @@ impl TryFrom<&[u8]> for Chunk {
         let mut chunk_buf: [u8; 4] = [0;4];
         let mut crc_buf: [u8;4] = [0;4];
         
-        reader.read_exact(&mut length_buf)?;
+        reader.read_exact(&mut length_buf).map_err(|err| ChunkError::ReadErr(err))?;
         let length = u32::from_be_bytes(length_buf);
         
-        reader.read_exact(&mut chunk_buf)?;
+        reader.read_exact(&mut chunk_buf).map_err(|err| ChunkError::ReadErr(err))?;
         let chunk_type = ChunkType::try_from(chunk_buf).unwrap();
         
         let mut data: Vec<u8> = vec![0; length as usize];
-        reader.read_exact(&mut data)?;
+        reader.read_exact(&mut data).map_err(|err| ChunkError::ReadErr(err))?;
 
-        reader.read_exact(&mut crc_buf)?;
+        reader.read_exact(&mut crc_buf).map_err(|err| ChunkError::ReadErr(err))?;
         let crc = u32::from_be_bytes(crc_buf);
         let crc_stream: Vec<u8> = chunk_buf
                 .into_iter()
@@ -128,7 +141,7 @@ impl TryFrom<&[u8]> for Chunk {
                 .collect();
 
         if crc != crc32(&crc_stream) {
-            return Err("CRC bytes mismatch with associated data".into());
+            return Err(ChunkError::CRCMismatch(crc, crc32(&crc_stream)));
         }
 
         Ok(Chunk {
