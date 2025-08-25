@@ -1,4 +1,4 @@
-use crate::{chunk::Chunk, chunk_type::ChunkType};
+use crate::{chunk::{Chunk, ChunkError}, chunk_type::ChunkType};
 use std::{fmt, io::{Cursor, Read, SeekFrom, Seek}};
 
 pub struct Png {
@@ -7,28 +7,43 @@ pub struct Png {
 }
 #[derive(Debug)]
 pub enum PNGError {
-    InsufficientBits,
+    InsufficientBytes(usize),
     HeaderMismatch,
     ReadErr(std::io::Error),
-    ChunkParse(String),
+    ChunkParse(ChunkError),
     ExcessBytes
 }
+
+impl std::error::Error for PNGError {}
+
+impl fmt::Display for PNGError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            PNGError::InsufficientBytes(size) => write!(f, "Byte count insufficient to initialize a png struct (Found {}, require at least 8)", size),
+            PNGError::HeaderMismatch => write!(f, "Header does not match Png::STANDARD_HEADER"),
+            PNGError::ReadErr(err) => write!(f, "Byte reading failed. Returned: {}", err),
+            PNGError::ChunkParse(err) => write!(f, "Chunk parsing error: {}", err),
+            PNGError::ExcessBytes => write!(f, "Byte count excess the PNG spec"),
+        }
+    }
+}
+
 
 impl Png {
     pub const STANDARD_HEADER: [u8;8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png {
             header: Png::STANDARD_HEADER,
             chunks: chunks
         }
     } 
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
 
-    fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, ()> {
+    pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, ()> {
         if let Some(i) = self.chunks.iter().position(|chunk| {
             str::from_utf8(chunk.chunk_type().bytes().as_ref()).unwrap() == chunk_type
         }) {
@@ -38,21 +53,21 @@ impl Png {
         }
     }
 
-    fn header(&self) -> &[u8;8] {
+    pub fn header(&self) -> &[u8;8] {
         &self.header
     }
 
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         &self.chunks
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         self.chunks.iter().find(|chunk| {
             str::from_utf8(chunk.chunk_type().bytes().as_ref()).unwrap() == chunk_type
         })
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         self.header.iter()
             .copied()
             .chain(self.chunks.iter().flat_map(|chunk| chunk.as_bytes()))
@@ -62,11 +77,11 @@ impl Png {
 
 
 impl TryFrom<&[u8]> for Png {
-    type Error = self::PNGError;
+    type Error = PNGError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         if bytes.len() < 8 {
-            return Err(PNGError::InsufficientBits);
+            return Err(PNGError::InsufficientBytes(bytes.len()));
         }
 
         let mut cursor = Cursor::new(bytes);
@@ -86,7 +101,7 @@ impl TryFrom<&[u8]> for Png {
                 Ok(n) => {
                     if n < 4 {return Err(PNGError::ExcessBytes);}
                 },
-                Err(e) => return Err(PNGError::ReadErr(e))
+                Err(err) => return Err(PNGError::ReadErr(err))
             }
 
             let length: u32 = u32::from_be_bytes(length_buf);
@@ -95,7 +110,7 @@ impl TryFrom<&[u8]> for Png {
             cursor.seek(SeekFrom::Current(-(length_buf.len() as i64))).map_err(|e| PNGError::ReadErr(e))?;
             cursor.read_exact(&mut chunk_data).map_err(|e| PNGError::ReadErr(e))?;
 
-            let chunk = Chunk::try_from(chunk_data.as_slice()).map_err(|s| PNGError::ChunkParse(s.to_string()))?;
+            let chunk = Chunk::try_from(chunk_data.as_slice()).map_err(|s| PNGError::ChunkParse(s))?;
             chunks.push(chunk);
         }
 
