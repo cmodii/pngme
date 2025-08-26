@@ -1,5 +1,3 @@
-#[allow(dead_code)]
-#[allow(unused)]
 use std::{io::BufReader, io::Read, string::FromUtf8Error};
 use crate::{chunk_type::ChunkType};
 use core::fmt;
@@ -160,11 +158,7 @@ impl std::fmt::Display for Chunk {
         write!(f, "{{\n")?;
         write!(f, " [Data Length]: {}\n", self.length)?;
         write!(f, " [Chunk Type]: {}\n", String::from_utf8(self.chunk_type.body.to_vec()).unwrap())?;
-        if self.data_as_string().is_ok() {
-            write!(f, " [Data]: {}\n", self.data_as_string().unwrap())?;
-        } else {
-            write!(f, " [Data]: INVALID_UTF8_STRING\n")?;
-        }
+        write!(f, " [Data]: {}\n", self.data_as_string().map_or("INVALID_UTF8_STRING".to_string(), |s| s))?;
         write!(f, " [CRC32-ISO-HDLC]: {}\n", self.crc)?;
         write!(f, "}}\n")?;
 
