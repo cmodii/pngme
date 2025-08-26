@@ -1,6 +1,7 @@
-use crate::{chunk::{Chunk, ChunkError}, chunk_type::ChunkType};
+use crate::{chunk::{Chunk, ChunkError}};
 use std::{fmt, io::{Cursor, Read, SeekFrom, Seek}};
 
+#[derive(Debug)]
 pub struct Png {
     header: [u8;8],
     chunks: Vec<Chunk>
@@ -40,7 +41,9 @@ impl Png {
     } 
 
     pub fn append_chunk(&mut self, chunk: Chunk) {
-        self.chunks.push(chunk);
+        // chunk should be not be appended at the end using .push
+        // per the spec the final chunk should be the IEND one, integrated by default inside PNGs
+        self.chunks.insert(self.chunks.len()-1, chunk);
     }
 
     pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, ()> {
