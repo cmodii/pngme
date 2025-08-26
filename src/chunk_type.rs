@@ -1,6 +1,3 @@
-#[allow(dead_code)]
-#[allow(unused)]
-
 use std::{convert::TryFrom, fmt, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
