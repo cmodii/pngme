@@ -1,5 +1,7 @@
+#[allow(dead_code)]
+#[allow(unused)]
 use std::{io::BufReader, io::Read, string::FromUtf8Error};
-use crate::{chunk_type::ChunkType, png::PNGError};
+use crate::{chunk_type::ChunkType};
 use core::fmt;
 
 pub const CRC32_LOOKUP_TABLE: [u32; 256] = {
@@ -155,11 +157,16 @@ impl TryFrom<&[u8]> for Chunk {
 
 impl std::fmt::Display for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{{")?;
-        write!(f, " [Data Length]: {}", self.length)?;
-        write!(f, " [Chunk Type]: {}", String::from_utf8(self.chunk_type.body.to_vec()).unwrap())?;
-        write!(f, " [Data]: {}", String::from_utf8(self.data.clone()).unwrap())?;
-        write!(f, " [CRC32-ISO-HDLC]: {}", self.crc)?;
+        write!(f, "{{\n")?;
+        write!(f, " [Data Length]: {}\n", self.length)?;
+        write!(f, " [Chunk Type]: {}\n", String::from_utf8(self.chunk_type.body.to_vec()).unwrap())?;
+        if self.data_as_string().is_ok() {
+            write!(f, " [Data]: {}\n", self.data_as_string().unwrap())?;
+        } else {
+            write!(f, " [Data]: INVALID_UTF8_STRING\n")?;
+        }
+        write!(f, " [CRC32-ISO-HDLC]: {}\n", self.crc)?;
+        write!(f, "}}\n")?;
 
         Ok(())
     }
