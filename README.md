@@ -1,8 +1,7 @@
 # PNGme
 [PNGme](https://jrdngr.github.io/pngme_book/introduction.html) is a command line tool that can encode/decode hidden messages inside png files and display png file data using chunks.
 ## Installation and Run options
-To install and run the application you'll need  [rustup](https://www.rust-lang.org/tools/install)
-From your command line:
+To install and run the application you'll need [rustup](https://www.rust-lang.org/tools/install)<br />From your command line:
 ```sh
 # Install the app with cargo
 $ cargo install --git https://github.com/cmodii/pngme-rs
