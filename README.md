@@ -4,7 +4,7 @@
 To install and run the application you'll need [rustup](https://www.rust-lang.org/tools/install)<br />From your command line:
 ```sh
 # Install the app with cargo
-$ cargo install --git https://github.com/cmodii/pngme-rs
+$ cargo install --git https://github.com/cmodii/pngme
 
 # Run the app from anywhere
 $ pngme
@@ -13,7 +13,7 @@ $ pngme
 or clone the repository using [Git](https://git-scm.com/) and build the application
 ```sh
 # Clone this repository
-$ git clone https://github.com/cmodii/pngme-rs
+$ git clone https://github.com/cmodii/pngme
 
 # Go into the repository
 $ cd pngme-rs
