@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use args::{Args, Commands};
 use clap::Parser;
 
