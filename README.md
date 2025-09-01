@@ -103,7 +103,7 @@ PNG files are read and parsed into a [png](src/png.rs#L5) class (a list of [chun
 
 PNGme has fully-fledged classes for the ``.png`` extension albeit it doesn't make full use of them, it can prove worth for any developer who needs to view/modify pngs.
 ## Credits
-PNGme was made with the following open source packages:
-[The PNGme project](https://jrdngr.github.io/pngme_book/introduction.html)
-[PNG (Portable Network Graphics) specification](http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html)
+PNGme was made with the following open source packages:<br />
+[The PNGme project](https://jrdngr.github.io/pngme_book/introduction.html)<br />
+[PNG (Portable Network Graphics) specification](http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html)<br />
 [clap crate (ver4.5.45)](https://crates.io/crates/clap)
