@@ -1,3 +1,4 @@
+
 # PNGme
 [PNGme](https://jrdngr.github.io/pngme_book/introduction.html) is a command line tool that can encode/decode hidden messages inside png files and display png file data using chunks.
 ## Installation and Run options
@@ -76,11 +77,10 @@ We get:
 }
 ```
 > [!WARNING] 
-> PNG files contain the IHDR, IDAT and IEND chunks by default, they do not contain any sort of valid string data, although it's not handled you should NOT tamper with those chunks or use their type codes.
+> PNG files contain the `IHDR`, `IDAT` and `IEND` chunks by default, they do not contain any sort of valid string data, although it's not handled you should NOT tamper with those chunks or use their type codes.
 
 ### decode
-``print`` is more convenient for viewing chunks but it gets tedious to keep track of one chunk so to view the data inside a chunk you can use the ``decode``command
-Following up with the above example:
+``print`` is more convenient for viewing chunks but it gets tedious to keep track of one chunk so to view the data inside a chunk you can use the ``decode``command<br />Following up with the above example:
 ```sh
 $ pngme print john_cena.png cena
 # Prints the following success message:
@@ -95,4 +95,15 @@ $ pngme remove john_cena.png cena
 # Removed chunk container (code: cena)
 ```
 > [!NOTE] 
-> remove deletes the first chunk with the chunk type code specified and does not delete ALL chunks with said type code.
+> `remove` deletes the first chunk with the chunk type code specified and does not delete ALL chunks with said type code.
+## For Developers
+PNGme stores UTF-8 valid strings inside the `.png` binary by making use of an arbitrarily-sized section in [chunks](src/chunk.rs) known as [chunk data](src/chunk.rs#L32) and references that section using a [chunk type](src/chunk_type.rs#L4), these two chunk components along with length (a 4 byte unsigned integer) allows us to find our messages and extract the strings using their exact length.
+
+PNG files are read and parsed into a [png](src/png.rs#L5) class (a list of [chunks](src/chunk.rs#L29)) in order to properly modify it with the class-specified methods, you can see the algorithms in the [commands module](src/commands.rs).
+
+PNGme has fully-fledged classes for the ``.png`` extension albeit it doesn't make full use of them, it can prove worth for any developer who needs to view/modify pngs.
+## Credits
+PNGme was made with the following open source packages:
+[The PNGme project](https://jrdngr.github.io/pngme_book/introduction.html)
+[PNG (Portable Network Graphics) specification](http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html)
+[clap crate (ver4.5.45)](https://crates.io/crates/clap)
